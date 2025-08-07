@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  username  String 
+  email     String  @unique
+  password  String 
+  photo     String? //can add default value here
+  roomId    Int?
+  room      Room?    @relation(fields: [roomId],references: [roomId])
+  chat      Chat[]
+}
+
+model Room {
+  roomId        Int     @id @default(autoincrement())
+  adminId       Int
+  roomNameSlug  String  @unique
+  roomPassword  String
+  users         User[]
+  chat          Chat[]
+}
+
+model Chat {
+  chatId  Int       @id @default(autoincrement())
+  message String    @db.VarChar(200)
+  userId  Int
+  roomId  Int
+  user    User      @relation(fields: [userId], references: [id])
+  room    Room      @relation(fields: [roomId],references: [roomId])
+}
