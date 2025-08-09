@@ -6,12 +6,20 @@ import { prisma } from "@repo/db/client"
 import { SignUpSchema, SignInSchema, roomSchema } from "@repo/common/types"
 import bcrypt from "bcrypt"
 import { createSlug } from "@repo/common/slug"
-
+import type { Room } from "@prisma/client"
 const app = express()
 const port = 3002
 const saltRounds = 7
+import cors from "cors"
+
+// Todo :
+// 1. Add a common function that can be used in signup and signin and send tokens  to remove reoccuring
+// logic and so user doesnt have to sign up twice , do same with createroom
+// 2. Add more type safety and try catches
+// 3. Make sure if a there is no user in the room the room self destructs in some time
 
 app.use(express.json())
+app.use(cors())
 
 const hashMyPassword = async (password: string) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds)
@@ -43,7 +51,13 @@ app.post("/signup", async (req, res) => {
                 email: credentials.data?.email,
             },
         })
-        return res.status(200).json({ userId: user.id })
+        const payload = {
+            userId: user.id,
+            email: credentials.data?.email,
+        }
+
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" })
+        return res.status(200).json(token)
     } catch (e) {
         return res.status(500).json({
             msg: "Something went wrong while signing up",
@@ -93,7 +107,7 @@ app.post("/signin", async (req, res) => {
             email: credentials.data?.email,
         }
 
-        const token = jwt.sign(payload, JWT_SECRET)
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" })
         res.status(200).send(token)
     } catch (e) {
         return res.status(500).json({
@@ -149,20 +163,27 @@ app.get("/createroom", roomMiddleware, async (req, res) => {
 
 app.post("/verifyroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
-    console.log("reached here  ")
+
     const { roomNameSlug, passcode } = req.body
-    const roomData = await prisma.room.findFirst({
-        where: {
-            roomNameSlug,
-        },
-    })
-    console.log("reached here 1 ")
+
+    let roomData: Room | null
+    try {
+        roomData = await prisma.room.findFirst({
+            where: {
+                roomNameSlug,
+            },
+        })
+    } catch (e) {
+        return res.status(500).json({
+            msg: "Server error , Failed to retrieve from database",
+        })
+    }
+
     if (!roomData) {
         return res.status(404).json({ msg: "Room not found" })
     }
 
     const password = roomData?.roomPassword
-    console.log("reached here 1.5 ")
 
     if (passcode === password) {
         const payload = {
@@ -172,11 +193,16 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
             passcode,
             verified: true,
         }
-        console.log("reached here 2 ")
-        const token = jwt.sign(payload, JWT_SECRET)
-        res.status(200).cookie("roomToken", token).send(token)
-        console.log("reached here 3 ")
-        return
+        try {
+            const token = jwt.sign(payload, JWT_SECRET)
+            res.status(200).cookie("roomToken", token).send(token)
+            return
+        } catch {
+            res.status(404).json({
+                msg: "The roomToken is invalid ",
+            })
+            return
+        }
     } else {
         return res.status(404).json({ msg: "Passcode is incorrect" })
     }
