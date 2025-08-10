@@ -1,4 +1,4 @@
-import express from "express"
+import express, { Response } from "express"
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "./config.js"
 import { roomMiddleware } from "./middleware.js"
@@ -6,7 +6,10 @@ import { prisma } from "@repo/db/client"
 import { SignUpSchema, SignInSchema, roomSchema } from "@repo/common/types"
 import bcrypt from "bcrypt"
 import { createSlug } from "@repo/common/slug"
-import type { Room } from "@prisma/client"
+import type { Room, User } from "@prisma/client"
+import { z } from "zod"
+import { checkUserExists } from "./lib.js"
+
 const app = express()
 const port = 3002
 const saltRounds = 7
@@ -38,7 +41,21 @@ app.post("/signup", async (req, res) => {
 
     if (!credentials.success) {
         console.log(credentials)
-        return res.status(403).json({ msg: "Incorrect Credentials Sent" })
+        return res.status(400).json({
+            msg: "Incorrect Credentials Sent",
+            errors: z.treeifyError(credentials.error),
+        })
+    }
+
+    const userExists = await checkUserExists({
+        username: credentials.data.username,
+        email: credentials.data.email,
+    })
+
+    if (userExists) {
+        return res.status(409).json({
+            msg: "User already Exists ",
+        })
     }
 
     const hashedPassword = await hashMyPassword(credentials.data?.password)
@@ -79,8 +96,9 @@ app.post("/signin", async (req, res) => {
 
     if (!credentials.success) {
         console.log(credentials)
-        return res.status(404).json({
-            msg: "Choose better credentials blud",
+        return res.status(400).json({
+            msg: "Incorrect Credentials Sent",
+            errors: z.treeifyError(credentials.error),
         })
     }
 
@@ -130,16 +148,20 @@ app.post("/signin", async (req, res) => {
 app.get("/createroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
     const roomCredentials = roomSchema.safeParse(req.body)
+
     if (!roomCredentials.success) {
         return res.status(403).json({
             msg: "Error while parsing Password or Name",
+            errors: z.treeifyError(roomCredentials.error),
         })
     }
+
     if (!userId) {
         return res.status(500).json({
             msg: "Something went wrong while creating room",
         })
     }
+
     const sluggedRoomName = createSlug(roomCredentials.data?.roomName)
 
     try {
