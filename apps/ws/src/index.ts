@@ -2,7 +2,8 @@ import WebSocket, { WebSocketServer } from "ws"
 import { prisma } from "@repo/db/client"
 import cookie from "cookie"
 import jwt, { JwtPayload } from "jsonwebtoken"
-import { JWT_SECRET, UserConnection } from "./config.js"
+import { JWT_SECRET } from "./config.js"
+import { CascadeValue, UserConnection } from "./lib.js"
 
 // cleanup the code a bit
 // 1 . add a queue to slowly update messages to the db
@@ -81,7 +82,8 @@ wss.on("connection", (ws: WebSocket, req) => {
             user.ws.send(parsedData.message)
         })
     })
-    ws.on("close", () => {
+
+    ws.on("close", async () => {
         const users = user.get(verifiedToken.roomId)
         if (users) {
             user.set(
@@ -92,5 +94,7 @@ wss.on("connection", (ws: WebSocket, req) => {
                 })
             )
         }
+        await CascadeValue({ verifiedToken })
+        return
     })
 })
