@@ -9,6 +9,7 @@ import { createSlug } from "@repo/common/slug"
 import type { Room, User } from "@prisma/client"
 import { z } from "zod"
 import { checkUserExists } from "./lib.js"
+import { getAllRoomMessages } from "./redis.js"
 
 const app = express()
 const port = 3002
@@ -227,6 +228,27 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
         }
     } else {
         return res.status(404).json({ msg: "Passcode is incorrect" })
+    }
+})
+
+app.get("/messages", async (req, res) => {
+    // we need to get past messages
+    const { roomId } = req.body
+    let cachedMessages = null
+    try {
+        cachedMessages = await getAllRoomMessages({ roomId })
+    } catch (e) {}
+
+    if (cachedMessages && cachedMessages.length > 0) {
+        //map over the array and return values
+        return cachedMessages
+    } else {
+        const dbMessages = await prisma.chat.findMany({
+            where: {
+                roomId: roomId,
+            },
+        })
+        return dbMessages
     }
 })
 

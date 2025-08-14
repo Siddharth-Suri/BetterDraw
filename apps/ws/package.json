@@ -13,6 +13,7 @@
     "license": "ISC",
     "description": "",
     "dependencies": {
+        "http": "workspace:*",
         "@repo/common": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/typescript-config": "workspace:*",

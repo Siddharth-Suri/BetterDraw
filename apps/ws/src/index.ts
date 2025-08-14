@@ -4,7 +4,7 @@ import cookie from "cookie"
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { JWT_SECRET } from "./config.js"
 import { CascadeValue, UserConnection } from "./lib.js"
-
+import { storeValues } from "http/redis"
 // cleanup the code a bit
 // 1 . add a queue to slowly update messages to the db
 // 2 . use less variables make code less verbose
@@ -62,6 +62,9 @@ wss.on("connection", (ws: WebSocket, req) => {
 
     ws.on("message", async function (incoming: string) {
         const parsedData = JSON.parse(incoming)
+        // 1 . add state to redis first and then to ps
+        // 2. clear state from redis whenever new messaage and add state whenever you try to get cachedd data for first user
+        // 3 . add save button to push to ps instead of awaiting every message or just push to redis and then later store to ps maybe
 
         const data = verifiedToken
         try {
