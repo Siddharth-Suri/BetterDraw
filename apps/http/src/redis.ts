@@ -13,15 +13,19 @@ export async function storeValues({
     message: object
     roomId: number
 }) {
-    const messageStr = JSON.stringify(message)
+    let messageStr = JSON.stringify(message)
 
-    await redis.lpush(`roomId:${roomId}:message:`, messageStr)
-    console.log("Pushed to redis list ")
+    await redis.publish(`roomId:${roomId}:message:`, messageStr)
 }
 
-export async function getAllRoomMessages({ roomId }: { roomId: number }) {
-    // get last 50 messages , here -50 is fifty from the end and till the last
-    const values = await redis.lrange(`roomId:${roomId}`, -50, -1)
-    return values
-    console.log("Gotten last 50 messages from redis list ")
+export async function getValues({ roomId }: { roomId: number }) {
+    const sub = new Redis()
+
+    await sub.subscribe(`roomId:${roomId}:`)
+    // whenever new message comes make sure to push it to connected users
+    sub.on("message", (channel, message) => {
+        const parsedMessage = JSON.parse(message)
+        return parsedMessage
+        // send all active users the message
+    })
 }

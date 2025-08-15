@@ -4,7 +4,7 @@ import cookie from "cookie"
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { JWT_SECRET } from "./config.js"
 import { CascadeValue, UserConnection } from "./lib.js"
-import { storeValues } from "http/redis"
+import { getValues, storeValues } from "http/redis"
 // cleanup the code a bit
 // 1 . add a queue to slowly update messages to the db
 // 2 . use less variables make code less verbose
@@ -23,8 +23,9 @@ const user: Map<number, UserConnection[]> = new Map([])
 // }
 
 wss.on("connection", (ws: WebSocket, req) => {
-    const cookies = cookie.parse(req.headers.cookie || "")
+    // -------verify logic and parsing --------
 
+    const cookies = cookie.parse(req.headers.cookie || "")
     if (!cookies) {
         ws.close()
         return
@@ -40,57 +41,62 @@ wss.on("connection", (ws: WebSocket, req) => {
     let verifiedToken: JwtPayload
     try {
         verifiedToken = jwt.verify(token, JWT_SECRET) as JwtPayload
+
+        if (verifiedToken.verified != true || !verifiedToken.userId) {
+            ws.close()
+            return
+        }
     } catch (e) {
         ws.close(404, "Incorrect Credentials ")
         return
     }
-    const verified = verifiedToken.verified
 
-    if (verified != true || !verifiedToken.userId) {
-        ws.close()
-        return
+    // -------extraction and adding in server state--------
+
+    const { userId, message, roomId } = verifiedToken
+
+    if (!user.has(roomId)) {
+        user.set(roomId, [])
+    } else {
+        user.get(roomId)?.push({
+            userId: userId,
+            ws: ws,
+        })
     }
-
-    if (!user.has(verifiedToken.roomId)) {
-        user.set(verifiedToken.roomId, [])
-    }
-
-    user.get(verifiedToken.roomId)?.push({
-        userId: verifiedToken.userId,
-        ws: ws,
-    })
 
     ws.on("message", async function (incoming: string) {
         const parsedData = JSON.parse(incoming)
-        // 1 . add state to redis first and then to ps
+        // 1. add state to redis first and then to ps
         // 2. clear state from redis whenever new messaage and add state whenever you try to get cachedd data for first user
-        // 3 . add save button to push to ps instead of awaiting every message or just push to redis and then later store to ps maybe
+        // 3. add save button to push to ps instead of awaiting every message or just push to redis and then later store to ps maybe
 
-        const data = verifiedToken
+        const cachedMessages = getValues({ roomId })
+
         try {
             if (parsedData.type === "message") {
+                const appendValue = storeValues({ message, roomId })
                 const messageCreate = await prisma.chat.create({
                     data: {
-                        message: parsedData.message,
-                        userId: data.userId,
-                        roomId: data.roomId,
+                        message: message,
+                        userId: userId,
+                        roomId: roomId,
                     },
                 })
             }
         } catch {
             ws.close(500, "Server error while sending message")
         }
-        const listOfUsers = user.get(verifiedToken.roomId)
+        const listOfUsers = user.get(roomId)
         listOfUsers?.forEach((user) => {
             user.ws.send(parsedData.message)
         })
     })
 
     ws.on("close", async () => {
-        const users = user.get(verifiedToken.roomId)
+        const users = user.get(roomId)
         if (users) {
             user.set(
-                verifiedToken.roomId,
+                roomId,
 
                 users.filter((x) => {
                     x.ws != ws

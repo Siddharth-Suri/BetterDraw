@@ -6,10 +6,16 @@ import { prisma } from "@repo/db/client"
 import { SignUpSchema, SignInSchema, roomSchema } from "@repo/common/types"
 import bcrypt from "bcrypt"
 import { createSlug } from "@repo/common/slug"
-import type { Room, User } from "@prisma/client"
+import type { Room, User, Chat } from "@prisma/client"
 import { z } from "zod"
 import { checkUserExists } from "./lib.js"
-import { getAllRoomMessages } from "./redis.js"
+import { getValues } from "./redis.js"
+type message = {
+    type: string
+    xValue: number
+    yValue: number
+    colour: string
+}
 
 const app = express()
 const port = 3002
@@ -236,10 +242,10 @@ app.get("/messages", async (req, res) => {
     const { roomId } = req.body
     let cachedMessages = null
     try {
-        cachedMessages = await getAllRoomMessages({ roomId })
+        cachedMessages = await getValues(roomId)
     } catch (e) {}
 
-    if (cachedMessages && cachedMessages.length > 0) {
+    if (cachedMessages) {
         //map over the array and return values
         return cachedMessages
     } else {
@@ -251,6 +257,8 @@ app.get("/messages", async (req, res) => {
         return dbMessages
     }
 })
+
+app.post("/")
 
 app.listen(port, () => {
     console.log("connected to port" + port)
