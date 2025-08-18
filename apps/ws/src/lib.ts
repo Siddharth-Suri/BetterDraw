@@ -1,5 +1,4 @@
 import { prisma } from "@repo/db/client"
-import { JwtPayload } from "jsonwebtoken"
 import { WebSocket } from "ws"
 
 export type UserConnection = {
@@ -7,21 +6,24 @@ export type UserConnection = {
     ws: WebSocket
 }
 
-export async function CascadeValue({
-    verifiedToken,
-}: {
-    verifiedToken: JwtPayload
-}) {
-    const { roomId, roomNameSlug } = verifiedToken
-    const roomName = await prisma.room.findFirst({
-        where: {
-            OR: [{ roomId }, { roomNameSlug }],
-        },
-        include: {
-            users: true,
-        },
-    })
-    const countOfUsers = roomName?.users.length ?? 0
+// checks user count whenever each collaborator leaves & deletes room if empty
+
+export async function CascadeValue({ roomId }: { roomId: number }) {
+    let room
+    try {
+        room = await prisma.room.findFirst({
+            where: {
+                roomId,
+            },
+            include: {
+                users: true,
+            },
+        })
+    } catch (e) {
+        throw e
+    }
+
+    const countOfUsers = room?.users.length ?? 0
     if (countOfUsers === 0) {
         const cascadeValue = await prisma.room.delete({
             where: {
@@ -29,4 +31,21 @@ export async function CascadeValue({
             },
         })
     }
+}
+export const messageCreateFunction = async ({
+    message,
+    userId,
+    roomId,
+}: {
+    message: string
+    userId: number
+    roomId: number
+}) => {
+    const messageCreate = await prisma.chat.create({
+        data: {
+            message: message,
+            userId: userId,
+            roomId: roomId,
+        },
+    })
 }
