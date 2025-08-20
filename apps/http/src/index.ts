@@ -10,6 +10,8 @@ import type { Room, User, Chat } from "@prisma/client"
 import { z } from "zod"
 import { checkUserExists } from "./lib.js"
 import { getValues } from "./redis.js"
+import { cookieUser } from "./lib.js"
+
 type message = {
     type: string
     xValue: number
@@ -142,6 +144,9 @@ app.post("/signin", async (req, res) => {
 })
 
 // Create room endpoint (send the token in params)
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+//     .eyJ1c2VySWQiOjcsImVtYWlsIjoidGhpcmR1c2VyQGdtYWlsLmNvbSIsImlhdCI6MTc1NTcwNjE0OSwiZXhwIjoxNzU1NzkyNTQ5fQ
+//     .GhxjPZH24keRFSF1o8k2oik8s8kJLkn1qzFuIaWAbRQ
 // {
 //     "roomName": "the Quick SIgma",
 //     "password": "hahaSIgma@1"
@@ -156,6 +161,13 @@ app.get("/createroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
     const roomCredentials = roomSchema.safeParse(req.body)
 
+    if (!userId) {
+        return res.status(500).json({
+            msg: "Something went wrong in room middleware while creating room",
+        })
+    }
+    const userIdNumber = Number(userId)
+
     if (!roomCredentials.success) {
         return res.status(403).json({
             msg: "Error while parsing Password or Name",
@@ -163,36 +175,58 @@ app.get("/createroom", roomMiddleware, async (req, res) => {
         })
     }
 
-    if (!userId) {
-        return res.status(500).json({
-            msg: "Something went wrong while creating room",
-        })
-    }
-
     const sluggedRoomName = createSlug(roomCredentials.data?.roomName)
-
+    let room
     try {
-        const room = await prisma.room.create({
+        room = await prisma.room.create({
             data: {
                 adminId: Number(userId),
                 roomNameSlug: sluggedRoomName,
                 roomPassword: roomCredentials.data?.password,
             },
         })
-        res.status(200).json({
-            roomNameSlug: sluggedRoomName,
-            roomId: room.roomId,
-        })
+        res.status(200)
     } catch (e) {
         return res.status(500).json({
             msg: "Error while creating room" + e,
         })
     }
+
+    const payload: cookieUser = {
+        userId: userIdNumber,
+        roomId: room.roomId,
+        roomNameSlug: room.roomNameSlug,
+        passcode: roomCredentials.data.password,
+        verified: true,
+    }
+    try {
+        const token = jwt.sign(payload, JWT_SECRET)
+        res.status(200).cookie("roomToken", token).json({
+            roomNameSlug: sluggedRoomName,
+            roomId: room.roomId,
+        })
+        return
+    } catch {
+        res.status(404).json({
+            msg: "The roomToken is invalid ",
+        })
+        return
+    }
 })
+
+// Need to send auth token for middleware
+// Need to send passcode and roomNameSlug
+// returns a token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjcsInJvb21JZCI6Mywicm9vbU5hbWVTbHVnIjoibmV3LXJvb20iLCJwYXNzY29kZSI6Im5vdGhpbmciLCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNzU1NzA2ODE0fQ.Emmp35I94BtbADwFSiN9sD06CPRCxPOYbhDjvmTGFR0
 
 app.post("/verifyroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
-
+    if (!userId) {
+        res.status(404).json({
+            msg: "userId not sent",
+        })
+        return
+    }
+    const userIdNumber = Number(userId)
     const { roomNameSlug, passcode } = req.body
 
     let roomData: Room | null
@@ -215,8 +249,8 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
     const password = roomData?.roomPassword
 
     if (passcode === password) {
-        const payload = {
-            userId: userId,
+        const payload: cookieUser = {
+            userId: userIdNumber,
             roomId: roomData.roomId,
             roomNameSlug: roomData.roomNameSlug,
             passcode,
@@ -257,8 +291,6 @@ app.get("/messages", async (req, res) => {
         return dbMessages
     }
 })
-
-app.post("/")
 
 app.listen(port, () => {
     console.log("connected to port" + port)

@@ -1,6 +1,14 @@
 import type { Room, User } from "@prisma/client"
 import { prisma } from "@repo/db/client"
 
+export type cookieUser = {
+    userId: number
+    roomId: number
+    roomNameSlug: string
+    passcode: string
+    verified: boolean
+}
+
 export async function checkUserExists({
     username,
     email,

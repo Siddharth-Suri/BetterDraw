@@ -9,7 +9,8 @@
         "dev": "npm run build && npm run start"
     },
     "exports": {
-        "./redis": "./src/redis.ts"
+        "./redis": "./src/redis.ts",
+        "./lib": "./src/lib.ts"
     },
     "keywords": [],
     "author": "",

@@ -14,8 +14,9 @@ export async function storeValues({
     roomId: number
 }) {
     let messageStr = JSON.stringify(message)
-
+    console.log(messageStr)
     await redis.publish(`roomId:${roomId}:message:`, messageStr)
+    console.log("Message uploaded to redis")
 }
 
 export async function getValues({ roomId }: { roomId: number }) {

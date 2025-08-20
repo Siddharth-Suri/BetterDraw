@@ -10,7 +10,7 @@ export const roomMiddleware = (
 
     if (!token) {
         return res.status(403).json({
-            msg: "Invalid credentials",
+            msg: "Missing Token",
         })
     }
     try {
