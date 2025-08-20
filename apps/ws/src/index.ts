@@ -5,6 +5,8 @@ import jwt, { JwtPayload } from "jsonwebtoken"
 import { JWT_SECRET } from "./config.js"
 import { CascadeValue, UserConnection, messageCreateFunction } from "./lib.js"
 import { getValues, storeValues } from "http/redis"
+import { cookieUser } from "http/lib"
+
 // cleanup the code a bit
 // 1 . add a queue to slowly update messages to the db
 // 3 . GAME CHANGER : add Redis or Kafka or BOTH
@@ -37,9 +39,9 @@ wss.on("connection", (ws: WebSocket, req) => {
         return
     }
 
-    let verifiedToken: JwtPayload
+    let verifiedToken: cookieUser
     try {
-        verifiedToken = jwt.verify(token, JWT_SECRET) as JwtPayload
+        verifiedToken = jwt.verify(token, JWT_SECRET) as cookieUser
 
         if (verifiedToken.verified != true || !verifiedToken.userId) {
             ws.close()
@@ -52,7 +54,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 
     // -------extraction and adding in server state--------
 
-    const { userId, message, roomId } = verifiedToken
+    const { userId, roomId } = verifiedToken
 
     if (!user.has(roomId)) {
         user.set(roomId, [])
@@ -62,22 +64,34 @@ wss.on("connection", (ws: WebSocket, req) => {
             ws: ws,
         })
     }
+    // need to add message receiving logic here
 
     ws.on("message", async function (incoming: string) {
-        const parsedData = JSON.parse(incoming)
-        // 1. add state to redis first and then to ps
-        // 2. clear state from redis whenever new messaage and add state whenever you try to get cachedd data for first user
-        // 3. add save button to push to ps instead of awaiting every message or just push to redis and then later store to ps maybe
+        // here parsedData would give a type and shol
+        let parsedData: any
+        try {
+            parsedData = JSON.parse(incoming)
+        } catch {
+            console.log("Message is not a JSON")
+            return
+        }
 
         const cachedMessages = getValues({ roomId })
 
         try {
             if (parsedData.type === "message") {
+                // here ->
+                const message = parsedData.message
+                console.log(message)
                 const appendValue = storeValues({ message, roomId })
+                console.log("control reached here 1")
                 // instead of awaiting be declare another function to make is " fire and forget "
-                messageCreateFunction({ message, userId, roomId }).catch(() => {
-                    console.log("Db call failed")
-                })
+                messageCreateFunction({ message, userId, roomId }).catch(
+                    (e) => {
+                        console.log("Db call failed" + e)
+                    }
+                )
+                console.log("control reached here 2")
             }
         } catch {
             ws.close(500, "Server error while sending message")

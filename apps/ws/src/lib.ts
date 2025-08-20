@@ -32,6 +32,9 @@ export async function CascadeValue({ roomId }: { roomId: number }) {
         })
     }
 }
+
+// create message buffer for uploading to db
+
 export const messageCreateFunction = async ({
     message,
     userId,
@@ -48,4 +51,27 @@ export const messageCreateFunction = async ({
             roomId: roomId,
         },
     })
+    console.log(
+        "Db created message room:" +
+            messageCreate.roomId +
+            " Chat : " +
+            messageCreate.message
+    )
+}
+
+// get past messages
+
+export const getPastMessages = async ({ roomId }: { roomId: number }) => {
+    const messages = await prisma.room.findUnique({
+        where: { roomId },
+        include: {
+            chat: {
+                orderBy: {
+                    chatId: "asc",
+                },
+            },
+        },
+    })
+    const pastMessageArray = messages?.chat
+    return pastMessageArray
 }
