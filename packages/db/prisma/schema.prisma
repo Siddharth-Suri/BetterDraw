@@ -14,7 +14,7 @@ model User {
   password  String 
   photo     String? //can add default value here
   roomId    Int?
-  room      Room?    @relation(fields: [roomId],references: [roomId])
+  room      Room?    @relation(fields: [roomId],references: [roomId] , onDelete: SetNull) 
   chat      Chat[]
 }
 
@@ -33,5 +33,5 @@ model Chat {
   userId  Int
   roomId  Int
   user    User      @relation(fields: [userId], references: [id])
-  room    Room      @relation(fields: [roomId],references: [roomId])
+  room    Room      @relation(fields: [roomId],references: [roomId],onDelete: Cascade)
 }

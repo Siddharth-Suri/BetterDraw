@@ -7,6 +7,8 @@ import { CascadeValue, UserConnection, messageCreateFunction } from "./lib.js"
 import { getValues, storeValues } from "http/redis"
 import { cookieUser } from "http/lib"
 
+// TODO : FIX FOREIGN KEY CONSTRAINT , MAKE SURE ROOM ISNT IMMEDIATELY DELETED AND DELTED AFTER SUPPOSE 1 DAY OF NO MEMBERS
+
 // cleanup the code a bit
 // 1 . add a queue to slowly update messages to the db
 // 3 . GAME CHANGER : add Redis or Kafka or BOTH
@@ -25,7 +27,7 @@ const user: Map<number, UserConnection[]> = new Map([])
 
 wss.on("connection", (ws: WebSocket, req) => {
     // -------verify logic and parsing --------
-
+    console.log("here")
     const cookies = cookie.parse(req.headers.cookie || "")
     if (!cookies) {
         ws.close()
@@ -58,12 +60,13 @@ wss.on("connection", (ws: WebSocket, req) => {
 
     if (!user.has(roomId)) {
         user.set(roomId, [])
-    } else {
-        user.get(roomId)?.push({
-            userId: userId,
-            ws: ws,
-        })
     }
+
+    user.get(roomId)?.push({
+        userId: userId,
+        ws: ws,
+    })
+
     // need to add message receiving logic here
 
     ws.on("message", async function (incoming: string) {
@@ -75,20 +78,21 @@ wss.on("connection", (ws: WebSocket, req) => {
             console.log("Message is not a JSON")
             return
         }
-
-        const cachedMessages = getValues({ roomId })
+        // redis caching values
+        // const cachedMessages = getValues({ roomId })
 
         try {
             if (parsedData.type === "message") {
                 // here ->
-                const message = parsedData.message
+                const message = JSON.stringify(parsedData.message)
                 console.log(message)
-                const appendValue = storeValues({ message, roomId })
+                // redis here
+                // const appendValue = storeValues({ message, roomId })
                 console.log("control reached here 1")
                 // instead of awaiting be declare another function to make is " fire and forget "
                 messageCreateFunction({ message, userId, roomId }).catch(
                     (e) => {
-                        console.log("Db call failed" + e)
+                        console.log("Db call failed " + e)
                     }
                 )
                 console.log("control reached here 2")
@@ -97,9 +101,17 @@ wss.on("connection", (ws: WebSocket, req) => {
             ws.close(500, "Server error while sending message")
         }
         const listOfUsers = user.get(roomId)
-        listOfUsers?.forEach((user) => {
-            user.ws.send(parsedData.message)
-        })
+
+        try {
+            listOfUsers?.forEach((user) => {
+                console.log("Message sent = " + parsedData.message)
+                const stringMessage = JSON.stringify(parsedData.message)
+                user.ws.send(stringMessage)
+            })
+        } catch (e) {
+            console.log("Error while seding message")
+            return
+        }
     })
 
     ws.on("close", async () => {

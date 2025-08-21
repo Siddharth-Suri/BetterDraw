@@ -19,14 +19,18 @@
         "@repo/common": "workspace:*",
         "@repo/ui": "workspace:*",
         "@tailwindcss/postcss": "^4.1.11",
+        "@types/js-cookie": "^3.0.6",
+        "@types/ws": "^8.18.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "js-cookie": "^3.0.5",
         "lucide-react": "^0.539.0",
         "next": "^15.4.2",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "react-hook-form": "^7.62.0",
         "tailwind-merge": "^3.3.1",
+        "ws": "^8.18.3",
         "zod": "^4.0.14"
     },
     "devDependencies": {
