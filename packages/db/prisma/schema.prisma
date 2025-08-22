@@ -23,6 +23,7 @@ model Room {
   adminId       Int
   roomNameSlug  String  @unique
   roomPassword  String
+  lastEmpty     DateTime?  
   users         User[]
   chat          Chat[]
 }

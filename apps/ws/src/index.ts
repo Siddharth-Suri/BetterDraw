@@ -129,6 +129,7 @@ wss.on("connection", (ws: WebSocket, req) => {
                 user.set(roomId, filteredUsers)
             } else {
                 updateUser({ roomId })
+                // add state updating or user map here
             }
         }
     })

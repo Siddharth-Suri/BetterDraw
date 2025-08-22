@@ -97,6 +97,7 @@ app.post("/signup", async (req, res) => {
 //     "password": "hahaSIgma@1"
 // }
 // token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoidXNlckBnbWFpbC5jb20iLCJpYXQiOjE3NTQ1ODA1MzB9.qpZbuYkwiu4jI-sC73E3haw34gPbh4CiBL61E07kY1o
+
 // put it inside the headers
 
 app.post("/signin", async (req, res) => {
@@ -216,7 +217,7 @@ app.get("/createroom", roomMiddleware, async (req, res) => {
 
 // Need to send auth token for middleware
 // Need to send passcode and roomNameSlug
-// returns a token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjcsInJvb21JZCI6Mywicm9vbU5hbWVTbHVnIjoibmV3LXJvb20iLCJwYXNzY29kZSI6Im5vdGhpbmciLCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNzU1NzA2ODE0fQ.Emmp35I94BtbADwFSiN9sD06CPRCxPOYbhDjvmTGFR0
+// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvb21JZCI6Niwicm9vbU5hbWVTbHVnIjoiZGlzY29yZCIsInBhc3Njb2RlIjoiSGF6ZXkiLCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNzU1ODc2MDkwfQ.rWWwAlG9S3kLi_6gD7pVsrfzUGTHgMmAQyCyPmUaZG4
 
 app.post("/verifyroom", roomMiddleware, async (req, res) => {
     const userId = req.userId

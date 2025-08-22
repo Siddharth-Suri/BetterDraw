@@ -49,6 +49,7 @@ export default function Chat() {
 
             <div>
                 {messages.map((msg, idx) => (
+                    //@ts-ignore
                     <div key={idx}>{msg.input}</div>
                 ))}
             </div>
