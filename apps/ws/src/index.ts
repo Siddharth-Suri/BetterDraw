@@ -3,7 +3,12 @@ import { prisma } from "@repo/db/client"
 import cookie from "cookie"
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { JWT_SECRET } from "./config.js"
-import { CascadeValue, UserConnection, messageCreateFunction } from "./lib.js"
+import {
+    CascadeValue,
+    UserConnection,
+    messageCreateFunction,
+    updateUser,
+} from "./lib.js"
 import { getValues, storeValues } from "http/redis"
 import { cookieUser } from "http/lib"
 
@@ -123,13 +128,8 @@ wss.on("connection", (ws: WebSocket, req) => {
             if (filteredUsers.length > 0) {
                 user.set(roomId, filteredUsers)
             } else {
-                user.delete(roomId)
+                updateUser({ roomId })
             }
         }
-        // Add this whenever you make the user changes to the db persistent
-
-        CascadeValue({ roomId }).catch((e) => {
-            console.log("Error while cascading " + e)
-        })
     })
 })

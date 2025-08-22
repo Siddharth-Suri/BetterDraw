@@ -44,6 +44,14 @@ export const messageCreateFunction = async ({
     userId: number
     roomId: number
 }) => {
+    console.log(
+        "message is = " +
+            message +
+            " roomid is = " +
+            roomId +
+            " userid is = " +
+            userId
+    )
     const messageCreate = await prisma.chat.create({
         data: {
             message: message,
@@ -57,6 +65,18 @@ export const messageCreateFunction = async ({
             " Chat : " +
             messageCreate.message
     )
+}
+
+// for auto deletion of values
+export const updateUser = async ({ roomId }: { roomId: number }) => {
+    const room = await prisma.room.update({
+        where: {
+            roomId,
+        },
+        data: {
+            lastEmpty: new Date(),
+        },
+    })
 }
 
 // get past messages
