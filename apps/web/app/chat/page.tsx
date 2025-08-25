@@ -1,4 +1,6 @@
 "use client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useEffect, useState } from "react"
 
 export default function Chat() {
@@ -39,19 +41,32 @@ export default function Chat() {
     }
 
     return (
-        <div>
-            <input
-                placeholder="message:"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-            />
-            <button onClick={sendMessage}>Send</button>
-
-            <div>
-                {messages.map((msg, idx) => (
-                    //@ts-ignore
-                    <div key={idx}>{msg.input}</div>
-                ))}
+        <div className="">
+            <div className=" flex justify-center p-2">
+                <div className="p-2">
+                    <Input
+                        placeholder="Type Message"
+                        onChange={(e) => setInput(e.target.value)}
+                    ></Input>
+                </div>
+                <div className="p-2">
+                    <Button onClick={sendMessage}>Send</Button>
+                </div>
+            </div>
+            <div className="flex justify-center">
+                <div className="">
+                    {messages.map((msg, idx) => (
+                        <div
+                            className="m-0.5 p-0.5 pl-2 pr-2 bg-gray-200 border-2 rounded-md"
+                            key={idx}
+                        >
+                            {
+                                //@ts-ignore
+                                msg.input
+                            }
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     )
