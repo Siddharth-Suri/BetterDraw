@@ -1,5 +1,7 @@
-import { AppWindowIcon, CodeIcon } from "lucide-react"
+"use client"
 
+// import { AppWindowIcon, CodeIcon } from "lucide-react"
+import { SignUpSchema, SignInSchema } from "@repo/common/types"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -12,10 +14,26 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 
-export default function TabsDemo() {
+export default function AuthPage() {
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors },
+    } = useForm()
+
+    const onSubmit = (value: any) => {
+        const postRequest = fetch("http://localhost:3000", {
+            method: "POST",
+            body: value,
+        })
+    }
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="min-h-screen flex items-center justify-center w-full bg-background">
             <div className="flex justify-center w-full max-w-lg flex-col gap-6 ">
                 <Tabs className="mb-6 w-full" defaultValue="account">
                     <TabsList className="w-full">
@@ -73,8 +91,8 @@ export default function TabsDemo() {
                             </div>
                         </Card>
                     </TabsContent>
-                    <TabsContent value="password">
-                        <Card>
+                    <TabsContent className="w-full" value="password">
+                        <Card className="w-full">
                             <CardHeader>
                                 <CardTitle className="text-xl">
                                     Sign in to your existing account
@@ -93,6 +111,7 @@ export default function TabsDemo() {
                                         id="tabs-demo-name"
                                         defaultValue=""
                                         placeholder="johndoe@example.com"
+                                        required
                                     />
                                 </div>
 
@@ -104,12 +123,15 @@ export default function TabsDemo() {
                                         placeholder="xyz@12345"
                                         id="tabs-demo-new"
                                         type="password"
+                                        required
                                     />
                                 </div>
                             </CardContent>
                             <div className="flex p-1 justify-center">
                                 <CardFooter>
-                                    <Button size="lg">Proceed</Button>
+                                    <Button className="w-full" size="lg">
+                                        Proceed
+                                    </Button>
                                 </CardFooter>
                             </div>
                         </Card>
