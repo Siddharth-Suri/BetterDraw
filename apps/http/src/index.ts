@@ -9,7 +9,7 @@ import { createSlug } from "@repo/common/slug"
 import type { Room, User, Chat } from "@prisma/client"
 import { z } from "zod"
 import { checkUserExists } from "./lib.js"
-import { getValues } from "./redis.js"
+// import { getValues } from "./redis.js"
 import { cookieUser } from "./lib.js"
 
 type message = {
@@ -101,11 +101,15 @@ app.post("/signup", async (req, res) => {
 // put it inside the headers
 
 app.post("/signin", async (req, res) => {
-    const credentials = SignInSchema.safeParse(req.body)
+    console.log("reached till backend")
+    console.log(await req.body)
+    const credentials = SignInSchema.safeParse(await req.body)
     //make database call here to verify cred
 
     if (!credentials.success) {
+        console.log("reached till backend2")
         console.log(credentials)
+        console.log("reached till backend3")
         return res.status(400).json({
             msg: "Incorrect Credentials Sent",
             errors: z.treeifyError(credentials.error),
@@ -113,6 +117,7 @@ app.post("/signin", async (req, res) => {
     }
 
     try {
+        console.log("reached till backend4")
         const user = await prisma.user.findFirst({
             where: {
                 email: credentials.data?.email,
@@ -120,9 +125,12 @@ app.post("/signin", async (req, res) => {
         })
 
         if (!user) {
+            console.log("reached till backend5")
             console.log(user)
+            // need to check frontend here for possible no values found in server
             return res.json({ msg: "Incorrect Credentials while signing in" })
         }
+        console.log("reached till backend6")
         const isPasswordCorrect = await bcrypt.compare(
             credentials.data?.password,
             user.password
@@ -136,7 +144,7 @@ app.post("/signin", async (req, res) => {
         }
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" })
-        res.status(200).send(token)
+        res.status(200).json(token)
     } catch (e) {
         return res.status(500).json({
             msg: "Server error while siging in",
@@ -276,9 +284,9 @@ app.get("/messages", async (req, res) => {
     // we need to get past messages
     const { roomId } = req.body
     let cachedMessages = null
-    try {
-        cachedMessages = await getValues(roomId)
-    } catch (e) {}
+    // try {
+    //     cachedMessages = await getValues(roomId)
+    // } catch (e) {}
 
     if (cachedMessages) {
         //map over the array and return values
