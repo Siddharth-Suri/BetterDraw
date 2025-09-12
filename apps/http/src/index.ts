@@ -49,7 +49,6 @@ app.post("/signup", async (req, res) => {
     const credentials = SignUpSchema.safeParse(req.body)
 
     if (!credentials.success) {
-        console.log(credentials)
         return res.status(400).json({
             msg: "Incorrect Credentials Sent",
             errors: z.treeifyError(credentials.error),
@@ -101,15 +100,9 @@ app.post("/signup", async (req, res) => {
 // put it inside the headers
 
 app.post("/signin", async (req, res) => {
-    console.log("reached till backend")
-    console.log(await req.body)
     const credentials = SignInSchema.safeParse(await req.body)
-    //make database call here to verify cred
 
     if (!credentials.success) {
-        console.log("reached till backend2")
-        console.log(credentials)
-        console.log("reached till backend3")
         return res.status(400).json({
             msg: "Incorrect Credentials Sent",
             errors: z.treeifyError(credentials.error),
@@ -117,7 +110,6 @@ app.post("/signin", async (req, res) => {
     }
 
     try {
-        console.log("reached till backend4")
         const user = await prisma.user.findFirst({
             where: {
                 email: credentials.data?.email,
@@ -125,18 +117,20 @@ app.post("/signin", async (req, res) => {
         })
 
         if (!user) {
-            console.log("reached till backend5")
-            console.log(user)
             // need to check frontend here for possible no values found in server
-            return res.json({ msg: "Incorrect Credentials while signing in" })
+            return res
+                .status(409)
+                .json({ msg: "Incorrect Credentials while signing in" })
         }
-        console.log("reached till backend6")
+
         const isPasswordCorrect = await bcrypt.compare(
             credentials.data?.password,
             user.password
         )
         if (!isPasswordCorrect) {
-            return res.json({ msg: "Incorrect Credentials while signing in" })
+            return res
+                .status(400)
+                .json({ msg: "Incorrect Credentials while signing in" })
         }
         const payload = {
             userId: user.id,

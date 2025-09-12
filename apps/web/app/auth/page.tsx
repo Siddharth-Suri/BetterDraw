@@ -1,6 +1,6 @@
 "use client"
 
-// import { AppWindowIcon, CodeIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { SignUpSchema, SignInSchema } from "@repo/common/types"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,25 +16,32 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { ZodObject, z } from "zod"
 
 export default function AuthPage() {
-    // set modes for react hook to distinguish bw login and signup
+    const router = useRouter()
+
     const [mode, setMode] = useState<"signin" | "signup">("signup")
-    console.log(mode)
-    const schema = mode === "signup" ? SignUpSchema : SignInSchema
+    const [loading, setLoading] = useState<"pointer" | "progress">("pointer")
+    const schema: ZodObject = mode === "signup" ? SignUpSchema : SignInSchema
 
     const {
         register,
         handleSubmit,
         formState: { errors },
         setError,
+        reset,
     } = useForm({
         resolver: zodResolver(schema),
     })
 
+    // cleanup for mode switch (signup , sign in)
+    useEffect(() => {
+        reset()
+    }, [mode, reset])
+
     const onSubmit = async (data: any) => {
-        console.log(data)
         try {
             let response = null
             response = await fetch(`http://localhost:3002/${mode}`, {
@@ -44,16 +51,32 @@ export default function AuthPage() {
             })
             if (!response.ok) {
                 if (response.status === 400) {
-                    alert("Validation Failed")
-                } else if (response.status === 409) {
-                    alert("User already exists")
+                    setError("password", {
+                        type: "manual",
+                        message: "Sign in Failed, Incorrect credentials",
+                    })
+                } else if (response.status === 409 && mode === "signup") {
+                    setError("email", {
+                        type: "manual",
+                        message: "User already exists. Please try signing in.",
+                    })
+                    setError("username", {
+                        type: "manual",
+                        message: "User already exists. Please try signing in.",
+                    })
+                } else if (response.status === 409 && mode === "signin") {
+                    setError("email", {
+                        type: "manual",
+                        message: "Sign in failed: User doesnt't exist",
+                    })
                 } else {
                     alert("Unexpected server error , Please try again later")
                 }
+                return
             }
-
+            router.push("/room")
             const token = await response.json()
-            localStorage.setItem("authToken", token)
+            localStorage.setItem("authToken", JSON.stringify(token))
         } catch (e) {
             console.log("Server error : " + e)
             alert("Server failed to connect")
@@ -81,7 +104,7 @@ export default function AuthPage() {
                                 </CardTitle>
                                 <CardDescription>
                                     Make your new account here. Click save when
-                                    you&apos;re done.
+                                    you're done.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-6">
@@ -138,13 +161,13 @@ export default function AuthPage() {
                             <div className="flex w-full p-1 justify-center">
                                 <CardFooter className="w-full">
                                     <Button
-                                        className="w-full cursor-pointer"
+                                        className={`w-full ${loading === "progress" ? "cursor-progress" : "cursor-pointer"}`}
                                         size="lg"
-                                        onClick={() => {
-                                            console.log("handler called")
-                                            handleSubmit(onSubmit)()
-                                            console.log("after handler called")
-                                        }}
+                                        onClick={handleSubmit(async (data) => {
+                                            setLoading("progress")
+                                            await onSubmit(data)
+                                            setLoading("pointer")
+                                        })}
                                     >
                                         Proceed
                                     </Button>
@@ -203,13 +226,16 @@ export default function AuthPage() {
                             <div className="flex w-full p-1 justify-center">
                                 <CardFooter className="w-full">
                                     <Button
-                                        className="w-full cursor-pointer"
+                                        className={`w-full ${loading === "progress" ? "cursor-progress" : "cursor-pointer"}`}
                                         size="lg"
-                                        onClick={() => {
-                                            console.log("handler called")
-                                            handleSubmit(onSubmit)()
-                                            console.log("after handler called")
-                                        }}
+                                        onClick={handleSubmit(async (data) => {
+                                            console.log(loading)
+                                            setLoading("progress")
+                                            console.log(loading)
+                                            await onSubmit(data)
+                                            console.log(loading)
+                                            setLoading("pointer")
+                                        })}
                                     >
                                         Proceed
                                     </Button>
