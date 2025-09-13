@@ -1,7 +1,7 @@
 import express, { Response } from "express"
 import jwt from "jsonwebtoken"
 import { JWT_SECRET } from "./config.js"
-import { roomMiddleware } from "./middleware.js"
+import { roomMiddleware, rateLimmiterMiddleware } from "./middleware.js"
 import { prisma } from "@repo/db/client"
 import { SignUpSchema, SignInSchema, roomSchema } from "@repo/common/types"
 import bcrypt from "bcrypt"
@@ -32,6 +32,7 @@ import cors from "cors"
 
 app.use(express.json())
 app.use(cors())
+app.use(rateLimmiterMiddleware)
 
 const hashMyPassword = async (password: string) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds)
@@ -46,6 +47,7 @@ const hashMyPassword = async (password: string) => {
 // }
 
 app.post("/signup", async (req, res) => {
+    console.log("hit")
     const credentials = SignUpSchema.safeParse(req.body)
 
     if (!credentials.success) {
