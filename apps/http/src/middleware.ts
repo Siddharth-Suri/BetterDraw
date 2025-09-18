@@ -14,7 +14,7 @@ export const roomMiddleware = (
 
     if (!token) {
         return res.status(403).json({
-            msg: "Missing Token",
+            msg: "Missing Token , Please log in first ",
         })
     }
     try {
@@ -22,7 +22,7 @@ export const roomMiddleware = (
 
         if (!response || typeof response === "string") {
             return res.status(403).json({
-                msg: "Invalid credentials",
+                msg: "Invalid credentials , Please try logging in",
             })
         }
 
@@ -30,7 +30,7 @@ export const roomMiddleware = (
         console.log("end of middlware")
         next()
     } catch (e) {
-        return res.status(403).json("Invalid token")
+        return res.status(403).json("Invalid token , Please try relogging in ")
     }
 }
 
@@ -64,7 +64,7 @@ export const rateLimmiterMiddleware = (
             console.log("Rate limitter activated")
             return res
                 .status(429)
-                .json({ msg: "Calm down , Too many requests " })
+                .json({ msg: "Calm down , Too many requests buddy" })
         }
     }
 }

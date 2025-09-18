@@ -162,7 +162,7 @@ app.post("/signin", async (req, res) => {
 //     "roomId": 2
 // }
 
-app.get("/createroom", roomMiddleware, async (req, res) => {
+app.post("/createroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
     const roomCredentials = roomSchema.safeParse(req.body)
 
@@ -233,12 +233,13 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
     }
     const userIdNumber = Number(userId)
     const { roomNameSlug, passcode } = req.body
+    const sluggedRoomName = createSlug(roomNameSlug)
 
     let roomData: Room | null
     try {
         roomData = await prisma.room.findFirst({
             where: {
-                roomNameSlug,
+                roomNameSlug: sluggedRoomName,
             },
         })
     } catch (e) {
@@ -257,7 +258,7 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
         const payload: cookieUser = {
             userId: userIdNumber,
             roomId: roomData.roomId,
-            roomNameSlug: roomData.roomNameSlug,
+            roomNameSlug: sluggedRoomName,
             passcode,
             verified: true,
         }
