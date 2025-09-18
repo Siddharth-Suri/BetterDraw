@@ -43,12 +43,15 @@ export default function AuthPage() {
 
     const onSubmit = async (data: any) => {
         try {
+            console.log("here")
             let response = null
             response = await fetch(`http://localhost:3002/${mode}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
+                credentials: "include",
             })
+            console.log("here")
             if (!response.ok) {
                 if (response.status === 400) {
                     setError("password", {
@@ -76,7 +79,6 @@ export default function AuthPage() {
             }
             router.push("/room")
             const token = await response.json()
-            localStorage.setItem("authToken", JSON.stringify(token))
         } catch (e) {
             console.log("Server error : " + e)
             alert("Server failed to connect")

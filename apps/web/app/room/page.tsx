@@ -22,6 +22,7 @@ export default function Room() {
                         roomName: roomName,
                         password: roomPassword,
                     }),
+                    credentials:"include"
                 })
                 if (res.ok) {
                     route.push("/chat")

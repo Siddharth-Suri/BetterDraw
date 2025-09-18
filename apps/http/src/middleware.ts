@@ -10,8 +10,7 @@ export const roomMiddleware = (
     res: Response,
     next: NextFunction
 ) => {
-    const token = req.headers["authorization"]
-
+    const token = req.cookies["authToken"]
     if (!token) {
         return res.status(403).json({
             msg: "Missing Token , Please log in first ",

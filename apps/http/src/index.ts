@@ -9,29 +9,23 @@ import { createSlug } from "@repo/common/slug"
 import type { Room, User, Chat } from "@prisma/client"
 import { z } from "zod"
 import { checkUserExists } from "./lib.js"
-// import { getValues } from "./redis.js"
+import cors from "cors"
+import cookieParser from "cookie-parser"
 import { cookieUser } from "./lib.js"
-
-type message = {
-    type: string
-    xValue: number
-    yValue: number
-    colour: string
-}
+// import { getValues } from "./redis.js"
 
 const app = express()
 const port = 3002
 const saltRounds = 7
-import cors from "cors"
 
-// Todo :
-// 1. Add a common function that can be used in signup and signin and send tokens  to remove reoccuring
-// logic and so user doesnt have to sign up twice , do same with createroom
-// 2. Add more type safety and try catches
-// 3. Make sure if a there is no user in the room the room self destructs in some time
-
+app.use(cookieParser())
 app.use(express.json())
-app.use(cors())
+app.use(
+    cors({
+        origin: true,
+        credentials: true,
+    })
+)
 app.use(rateLimmiterMiddleware)
 
 const hashMyPassword = async (password: string) => {
@@ -39,16 +33,10 @@ const hashMyPassword = async (password: string) => {
     return hashedPassword
 }
 
-// Sign Up endpoint
-// {
-//     "email": "user@gmail.com",
-//     "password": "hahaSIgma@1",
-//     "username": "seconduser"
-// }
-
 app.post("/signup", async (req, res) => {
     console.log("hit")
     const credentials = SignUpSchema.safeParse(req.body)
+    console.log("hit")
 
     if (!credentials.success) {
         return res.status(400).json({
@@ -82,24 +70,24 @@ app.post("/signup", async (req, res) => {
             userId: user.id,
             email: credentials.data?.email,
         }
+        console.log("hit")
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" })
-        return res.status(200).json(token)
+        console.log("hit")
+        res.status(200)
+            .cookie("authToken", token, {
+                secure: true,
+                sameSite: "none",
+            })
+            .json({
+                token,
+            })
     } catch (e) {
         return res.status(500).json({
             msg: "Something went wrong while signing up",
         })
     }
 })
-
-// SignIN
-// {
-//     "email": "user@gmail.com",
-//     "password": "hahaSIgma@1"
-// }
-// token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsImVtYWlsIjoidXNlckBnbWFpbC5jb20iLCJpYXQiOjE3NTQ1ODA1MzB9.qpZbuYkwiu4jI-sC73E3haw34gPbh4CiBL61E07kY1o
-
-// put it inside the headers
 
 app.post("/signin", async (req, res) => {
     const credentials = SignInSchema.safeParse(await req.body)
@@ -139,28 +127,23 @@ app.post("/signin", async (req, res) => {
             email: credentials.data?.email,
         }
 
+        console.log("here ")
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1d" })
-        res.status(200).json(token)
+        res.status(200)
+            .cookie("authToken", token, {
+                secure: true,
+                sameSite: "none",
+            })
+            .json({
+                token,
+            })
+        console.log("here is the cookie blud")
     } catch (e) {
         return res.status(500).json({
             msg: "Server error while siging in",
         })
     }
 })
-
-// Create room endpoint (send the token in params)
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
-//     .eyJ1c2VySWQiOjcsImVtYWlsIjoidGhpcmR1c2VyQGdtYWlsLmNvbSIsImlhdCI6MTc1NTcwNjE0OSwiZXhwIjoxNzU1NzkyNTQ5fQ
-//     .GhxjPZH24keRFSF1o8k2oik8s8kJLkn1qzFuIaWAbRQ
-// {
-//     "roomName": "the Quick SIgma",
-//     "password": "hahaSIgma@1"
-// }
-// retuned
-// {
-//     "roomNameSlug": "the-quick-sigma",
-//     "roomId": 2
-// }
 
 app.post("/createroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
@@ -190,7 +173,7 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
                 roomPassword: roomCredentials.data?.password,
             },
         })
-        res.status(200)
+        res.status(200).json({ msg: "Success" })
     } catch (e) {
         return res.status(500).json({
             msg: "Error while creating room" + e,
@@ -206,10 +189,17 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
     }
     try {
         const token = jwt.sign(payload, JWT_SECRET)
-        res.status(200).cookie("roomToken", token).json({
-            roomNameSlug: sluggedRoomName,
-            roomId: room.roomId,
-        })
+        console.log("herhe")
+        res.status(200)
+            .cookie("roomToken", token, {
+                secure: true,
+                sameSite: "none",
+            })
+            .json({
+                roomNameSlug: sluggedRoomName,
+                roomId: room.roomId,
+            })
+        console.log("here is the cookie blud")
         return
     } catch {
         res.status(404).json({
@@ -218,10 +208,6 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
         return
     }
 })
-
-// Need to send auth token for middleware
-// Need to send passcode and roomNameSlug
-// eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvb21JZCI6Niwicm9vbU5hbWVTbHVnIjoiZGlzY29yZCIsInBhc3Njb2RlIjoiSGF6ZXkiLCJ2ZXJpZmllZCI6dHJ1ZSwiaWF0IjoxNzU1ODc2MDkwfQ.rWWwAlG9S3kLi_6gD7pVsrfzUGTHgMmAQyCyPmUaZG4
 
 app.post("/verifyroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
@@ -264,7 +250,12 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
         }
         try {
             const token = jwt.sign(payload, JWT_SECRET)
-            res.status(200).cookie("roomToken", token).send(token)
+            res.status(200)
+                .cookie("roomToken", token, {
+                    secure: true,
+                    sameSite: "none",
+                })
+                .send(token)
             return
         } catch {
             res.status(404).json({
