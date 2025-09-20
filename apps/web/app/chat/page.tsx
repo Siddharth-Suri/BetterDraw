@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import Cookies from "js-cookie"
 import { Input } from "@/components/ui/input"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import jwt from "jsonwebtoken"
 
 export default function Chat() {
@@ -10,26 +10,34 @@ export default function Chat() {
     const [socket, setSocket] = useState<WebSocket | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [input, setInput] = useState("")
-    const [username, setUsername] = useState<null | string>()
+    const usernameRef = useRef<string | null>(null)
+
+    const [roomName, setRoomName] = useState<null | string>()
     const [messages, setMessages] = useState<object[]>([
-        { input: "testing message  1" },
+        { username: "Server Test", input: "testing message  1" },
     ])
 
     const token = Cookies.get("authToken") ?? ""
-    console.log(messages)
+    const roomToken = Cookies.get("roomToken") ?? ""
+
     useEffect(() => {
-        if (!token) {
+        if (!token || !roomToken) {
             setError(" Unauthorized access : Please try logging in ")
             return
         }
+        let roomTokenDecoded = jwt.decode(roomToken)
         let decoded = jwt.decode(token)
-        if (!decoded || typeof decoded === "string") {
+        if (
+            !decoded ||
+            typeof decoded === "string" ||
+            !roomTokenDecoded ||
+            typeof roomTokenDecoded === "string"
+        ) {
             setError("Invalid token")
             return
         }
-        console.log(decoded)
-        console.log(decoded.username)
-        setUsername(decoded.username)
+        setRoomName(roomTokenDecoded.roomNameSlug)
+        usernameRef.current = decoded.username
     }, [])
 
     useEffect(() => {
@@ -53,11 +61,24 @@ export default function Chat() {
             }
 
             ws.onmessage = (event) => {
-                console.log(event.data)
-                console.log(username)
                 const data = JSON.parse(event.data)
-                console.log(data.trimmedInput)
-                setMessages((prev) => [...prev, { input: data.trimmedInput }])
+                console.log("Step 1")
+                console.log(event)
+                console.log("Step 2")
+                console.log(messages)
+                console.log("Step 3")
+                console.log(data)
+                console.log("Step 7")
+                console.log(data.username)
+
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        type: data.type,
+                        username: data.username,
+                        input: data.message.trimmedInput,
+                    },
+                ])
             }
         }
         credentials()
@@ -68,10 +89,15 @@ export default function Chat() {
     const sendMessage = () => {
         const trimmedInput = input.trim()
         if (trimmedInput != "") {
+            console.log("Step 4" + usernameRef.current)
+
             const message = JSON.stringify({
                 type: "message",
+                username: usernameRef.current,
                 message: { trimmedInput },
             })
+            console.log("Step 5" + message)
+
             if (socket) {
                 socket.send(message)
             }
@@ -89,12 +115,18 @@ export default function Chat() {
                 </div>
             ) : (
                 <div>
-                    <div className="flex justify-center  p-2">
-                        {/* <div className="p-4">Room Name</div> */}
+                    <div className="flex  justify-center items-center  p-2">
+                        <div className="bg-black ronded-xl text-sm flex gap-2 p-2 rounded-lg pl-4 pr-4">
+                            <div className="font-normal text-white">
+                                {" # "}
+                                Room Name:{" "}
+                            </div>
+                            <div className="text-blue-400 ">{roomName}</div>
+                        </div>
                         <div className="p-2 ">
                             <Input
                                 className="bg-white"
-                                defaultValue=""
+                                value={input}
                                 placeholder="Type Message"
                                 onChange={(e) => setInput(e.target.value)}
                             />
@@ -113,7 +145,10 @@ export default function Chat() {
                                             className={`flex items-center max-w-[70%] `}
                                         >
                                             <div className="flex p-3 rounded-l-2xl rounded-tr-2xl bg-gray-50 underline font-serif text-gray-700 dark:text-gray-300 mx-2">
-                                                {username + ": "}
+                                                {
+                                                    //@ts-ignore
+                                                    msg.username + ": "
+                                                }
                                             </div>
 
                                             <div

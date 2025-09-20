@@ -47,9 +47,10 @@ wss.on("connection", (ws: WebSocket, req) => {
         ws.close(4001, "Unauthorized")
         return
     }
-
+    console.log("reached here 1")
     let verifiedToken: cookieUser
     try {
+        console.log("reached here 2")
         verifiedToken = jwt.verify(token, JWT_SECRET) as cookieUser
 
         if (verifiedToken.verified != true || !verifiedToken.userId) {
@@ -57,6 +58,7 @@ wss.on("connection", (ws: WebSocket, req) => {
             return
         }
     } catch (e) {
+        console.log("reached here 3")
         ws.close(404, "Incorrect Credentials ")
         return
     }
@@ -65,6 +67,7 @@ wss.on("connection", (ws: WebSocket, req) => {
 
     const { userId, roomId } = verifiedToken
 
+    console.log("reached here 4")
     if (!user.has(roomId)) {
         user.set(roomId, [])
     }
@@ -79,7 +82,9 @@ wss.on("connection", (ws: WebSocket, req) => {
     ws.on("message", async function (incoming: string) {
         // here parsedData would give a type and shol
         let parsedData: any
+        console.log("reached here 5")
         try {
+            console.log("reached here 6")
             parsedData = JSON.parse(incoming)
         } catch {
             console.log("Message is not a JSON")
@@ -88,8 +93,11 @@ wss.on("connection", (ws: WebSocket, req) => {
         // redis caching values
         // const cachedMessages = getValues({ roomId })
 
+        console.log("reached here 6.5")
         try {
             if (parsedData.type === "message") {
+                console.log("reached here 7")
+                console.log(parsedData)
                 // here ->
                 const message = JSON.stringify(parsedData.message)
                 console.log(message)
@@ -112,7 +120,7 @@ wss.on("connection", (ws: WebSocket, req) => {
         try {
             listOfUsers?.forEach((user) => {
                 console.log("Message sent = " + parsedData.message)
-                const stringMessage = JSON.stringify(parsedData.message)
+                const stringMessage = JSON.stringify(parsedData)
                 user.ws.send(stringMessage)
             })
         } catch (e) {
