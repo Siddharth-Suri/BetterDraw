@@ -42,17 +42,7 @@ export default function Chat() {
 
     useEffect(() => {
         async function credentials() {
-            const credentials = await fetch(
-                "http://localhost:3002/checktoken",
-                {
-                    credentials: "include",
-                }
-            )
-            if (!credentials.ok) {
-                setError(" Unauthorized access : Please try logging in ")
-                return
-            }
-            console.log("connecting...")
+            console.log("Connecting...")
             const ws = new WebSocket("ws://localhost:8080/")
 
             ws.onopen = () => {
@@ -62,14 +52,6 @@ export default function Chat() {
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data)
-                console.log("Step 1")
-                console.log(event)
-                console.log("Step 2")
-                console.log(messages)
-                console.log("Step 3")
-                console.log(data)
-                console.log("Step 7")
-                console.log(data.username)
 
                 setMessages((prev) => [
                     ...prev,
@@ -89,14 +71,11 @@ export default function Chat() {
     const sendMessage = () => {
         const trimmedInput = input.trim()
         if (trimmedInput != "") {
-            console.log("Step 4" + usernameRef.current)
-
             const message = JSON.stringify({
                 type: "message",
                 username: usernameRef.current,
                 message: { trimmedInput },
             })
-            console.log("Step 5" + message)
 
             if (socket) {
                 socket.send(message)

@@ -32,7 +32,7 @@ const user: Map<number, UserConnection[]> = new Map([])
 
 wss.on("connection", (ws: WebSocket, req) => {
     // -------verify logic and parsing --------
-    console.log("here")
+    console.log("Reached ws layer")
     const cookies = cookie.parse(req.headers.cookie || "")
     if (!cookies) {
         console.log("Missing cookies : Kindly enable cookies ")
@@ -47,10 +47,9 @@ wss.on("connection", (ws: WebSocket, req) => {
         ws.close(4001, "Unauthorized")
         return
     }
-    console.log("reached here 1")
+
     let verifiedToken: cookieUser
     try {
-        console.log("reached here 2")
         verifiedToken = jwt.verify(token, JWT_SECRET) as cookieUser
 
         if (verifiedToken.verified != true || !verifiedToken.userId) {
@@ -58,7 +57,6 @@ wss.on("connection", (ws: WebSocket, req) => {
             return
         }
     } catch (e) {
-        console.log("reached here 3")
         ws.close(404, "Incorrect Credentials ")
         return
     }
@@ -67,7 +65,6 @@ wss.on("connection", (ws: WebSocket, req) => {
 
     const { userId, roomId } = verifiedToken
 
-    console.log("reached here 4")
     if (!user.has(roomId)) {
         user.set(roomId, [])
     }
@@ -82,9 +79,8 @@ wss.on("connection", (ws: WebSocket, req) => {
     ws.on("message", async function (incoming: string) {
         // here parsedData would give a type and shol
         let parsedData: any
-        console.log("reached here 5")
+
         try {
-            console.log("reached here 6")
             parsedData = JSON.parse(incoming)
         } catch {
             console.log("Message is not a JSON")
@@ -93,24 +89,21 @@ wss.on("connection", (ws: WebSocket, req) => {
         // redis caching values
         // const cachedMessages = getValues({ roomId })
 
-        console.log("reached here 6.5")
         try {
             if (parsedData.type === "message") {
-                console.log("reached here 7")
                 console.log(parsedData)
                 // here ->
                 const message = JSON.stringify(parsedData.message)
-                console.log(message)
+
                 // redis here
                 // const appendValue = storeValues({ message, roomId })
-                console.log("control reached here 1")
+
                 // instead of awaiting be declare another function to make is " fire and forget "
                 messageCreateFunction({ message, userId, roomId }).catch(
                     (e) => {
                         console.log("Db call failed " + e)
                     }
                 )
-                console.log("control reached here 2")
             }
         } catch {
             ws.close(500, "Server error while sending message")
