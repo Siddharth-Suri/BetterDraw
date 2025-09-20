@@ -22,7 +22,7 @@ export default function Room() {
                         roomName: roomName,
                         password: roomPassword,
                     }),
-                    credentials:"include"
+                    credentials: "include",
                 })
                 if (res.ok) {
                     route.push("/chat")
@@ -44,6 +44,7 @@ export default function Room() {
                         roomNameSlug: roomName,
                         passcode: roomPassword,
                     }),
+                    credentials: "include",
                 })
                 if (res.ok) {
                     route.push("/chat")
@@ -51,7 +52,6 @@ export default function Room() {
                     const body = await res.json()
                     console.log(body?.msg)
                     setError(body?.msg)
-
                     return "Error"
                 }
             } catch (e) {

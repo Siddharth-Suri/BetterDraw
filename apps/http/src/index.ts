@@ -68,6 +68,7 @@ app.post("/signup", async (req, res) => {
         })
         const payload = {
             userId: user.id,
+            username: user.username,
             email: credentials.data?.email,
         }
         console.log("hit")
@@ -124,6 +125,7 @@ app.post("/signin", async (req, res) => {
         }
         const payload = {
             userId: user.id,
+            username: user.username,
             email: credentials.data?.email,
         }
 
@@ -149,6 +151,7 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
     const roomCredentials = roomSchema.safeParse(req.body)
 
+    console.log("control reached here 0")
     if (!userId) {
         return res.status(500).json({
             msg: "Something went wrong in room middleware while creating room",
@@ -162,6 +165,7 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
             errors: z.treeifyError(roomCredentials.error),
         })
     }
+    console.log("control reached here 1")
 
     const sluggedRoomName = createSlug(roomCredentials.data?.roomName)
     let room
@@ -173,13 +177,12 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
                 roomPassword: roomCredentials.data?.password,
             },
         })
-        res.status(200).json({ msg: "Success" })
     } catch (e) {
         return res.status(500).json({
-            msg: "Error while creating room" + e,
+            msg: "Error while creating room , There might exist a room with the same name ",
         })
     }
-
+    console.log("control reached here 2")
     const payload: cookieUser = {
         userId: userIdNumber,
         roomId: room.roomId,
@@ -199,7 +202,7 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
                 roomNameSlug: sluggedRoomName,
                 roomId: room.roomId,
             })
-        console.log("here is the cookie blud")
+        console.log("here is the cookie buddy")
         return
     } catch {
         res.status(404).json({
@@ -286,6 +289,17 @@ app.get("/messages", async (req, res) => {
             },
         })
         return dbMessages
+    }
+})
+
+app.get("/checktoken", (req, res) => {
+    const authToken = req.cookies["authToken"] ?? null
+    const roomToken = req.cookies["roomToken"] ?? null
+
+    if (authToken && roomToken) {
+        res.status(200).send(true)
+    } else {
+        res.status(401).send(false)
     }
 })
 

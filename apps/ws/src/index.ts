@@ -35,14 +35,16 @@ wss.on("connection", (ws: WebSocket, req) => {
     console.log("here")
     const cookies = cookie.parse(req.headers.cookie || "")
     if (!cookies) {
-        ws.close()
+        console.log("Missing cookies : Kindly enable cookies ")
+        ws.close(4001, "Unauthorized")
         return
     }
 
     const token = cookies.roomToken
 
     if (!token) {
-        ws.close()
+        console.log("Token is missing : Kindly try to login ")
+        ws.close(4001, "Unauthorized")
         return
     }
 
