@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from "react"
 import jwt from "jsonwebtoken"
 
 export default function Chat() {
-    let ws: WebSocket | null = null
+    let ws: WebSocket
+
     const [socket, setSocket] = useState<WebSocket | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [input, setInput] = useState("")
@@ -16,6 +17,9 @@ export default function Chat() {
     const [messages, setMessages] = useState<object[]>([
         { username: "Server Test", input: "testing message  1" },
     ])
+    const [expandedMessages, setExpandedMessages] = useState<Set<number>>(
+        new Set()
+    )
 
     const token = Cookies.get("authToken") ?? ""
     const roomToken = Cookies.get("roomToken") ?? ""
@@ -43,8 +47,7 @@ export default function Chat() {
     useEffect(() => {
         async function credentials() {
             console.log("Connecting...")
-            const ws = new WebSocket("ws://localhost:8080/")
-
+            ws = new WebSocket("ws://localhost:8080/")
             ws.onopen = () => {
                 console.log("Connected to server")
                 setSocket(ws)
@@ -65,7 +68,7 @@ export default function Chat() {
         }
         credentials()
 
-        return () => ws?.close()
+        return () => ws.close()
     }, [])
 
     const sendMessage = () => {
@@ -87,7 +90,7 @@ export default function Chat() {
     }
 
     return (
-        <div className="bg-gray-200 h-screen">
+        <div className="bg-gray-200 h-screen overflow-auto">
             {error ? (
                 <div>
                     <div className="text-red-500 font-semibold">{error}</div>
@@ -114,31 +117,80 @@ export default function Chat() {
                             <Button onClick={sendMessage}>Send</Button>
                         </div>
                     </div>
-
                     <div className="flex justify-center p-4">
-                        <div className="w-full max-w-2xl  space-y-3">
+                        <div className="w-full max-w-2xl space-y-3">
                             {messages.map((msg, idx) => {
+                                const isOwnMessage =
+                                    (msg as any).username ===
+                                    usernameRef.current
+                                const messageText = (msg as any).input || msg
+                                const wordLimit = 50
+                                const words = messageText.toString().split(" ")
+                                const shouldTruncate = words.length > wordLimit
+                                const isExpanded = expandedMessages.has(idx)
+                                const displayText =
+                                    shouldTruncate && !isExpanded
+                                        ? words.slice(0, wordLimit).join(" ")
+                                        : messageText
+
                                 return (
-                                    <div key={idx} className={`flex  `}>
+                                    <div
+                                        key={idx}
+                                        className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
+                                    >
                                         <div
-                                            className={`flex items-center max-w-[70%] `}
+                                            className={`max-w-[70%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}
                                         >
-                                            <div className="flex p-3 rounded-l-2xl rounded-tr-2xl bg-gray-50 underline font-serif text-gray-700 dark:text-gray-300 mx-2">
-                                                {
-                                                    //@ts-ignore
-                                                    msg.username + ": "
-                                                }
-                                            </div>
-
-                                            <div
-                                                className={`p-3 rounded-2xl shadow-md text-white bg-blue-600 rounded-bl-none
-
-                                                `}
+                                            {/* Username label */}
+                                            <span
+                                                className={`text-xs font-medium text-gray-600 mb-1 px-2 ${isOwnMessage ? "text-right" : "text-left"}`}
                                             >
                                                 {
                                                     //@ts-ignore
-                                                    msg.input || msg
+                                                    msg.username
                                                 }
+                                            </span>
+
+                                            {/* Message bubble */}
+                                            <div
+                                                className={`px-4 py-2 rounded-2xl shadow-sm max-w-full break-words whitespace-pre-wrap ${isOwnMessage ? "bg-blue-600 text-white rounded-br-none" : "bg-white text-gray-800 rounded-bl-none border border-gray-200"}`}
+                                            >
+                                                <span>
+                                                    {displayText}
+                                                    {shouldTruncate && (
+                                                        <button
+                                                            className={`ml-2 underline text-sm ${isOwnMessage ? "text-blue-100 hover:text-white" : "text-blue-600 hover:text-blue-800"}`}
+                                                            onClick={() => {
+                                                                setExpandedMessages(
+                                                                    (prev) => {
+                                                                        const newSet =
+                                                                            new Set(
+                                                                                prev
+                                                                            )
+                                                                        if (
+                                                                            newSet.has(
+                                                                                idx
+                                                                            )
+                                                                        ) {
+                                                                            newSet.delete(
+                                                                                idx
+                                                                            )
+                                                                        } else {
+                                                                            newSet.add(
+                                                                                idx
+                                                                            )
+                                                                        }
+                                                                        return newSet
+                                                                    }
+                                                                )
+                                                            }}
+                                                        >
+                                                            {isExpanded
+                                                                ? "show less"
+                                                                : "show more"}
+                                                        </button>
+                                                    )}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

@@ -20,18 +20,10 @@ import { cookieUser } from "http/lib"
 
 const wss = new WebSocketServer({ port: 8080 })
 
-// users should be slowly pushed to db
 const user: Map<number, UserConnection[]> = new Map([])
 
-// Headers: Cookie
-// roomToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInJvb21JZCI6Miwicm9vbU5hbWVTbHVnIjoidGhlLXF1aWNrLXNpZ21hIiwicGFzc2NvZGUiOiJoYWhhU0lnbWFAMSIsInZlcmlmaWVkIjp0cnVlLCJpYXQiOjE3NTQ1ODEzMTd9.3q5KEicaALCpULQ9vTPN1ARvhyl7pGVoUKCiSfpFvAg
-// {
-//     "type":"message",
-//     "message":"first message"
-// }
-
 wss.on("connection", (ws: WebSocket, req) => {
-    // -------verify logic and parsing --------
+    // verify logic and parsing
     console.log("Reached ws layer")
     const cookies = cookie.parse(req.headers.cookie || "")
     if (!cookies) {
@@ -61,7 +53,7 @@ wss.on("connection", (ws: WebSocket, req) => {
         return
     }
 
-    // -------extraction and adding in server state--------
+    // extraction and adding in server state
 
     const { userId, roomId } = verifiedToken
 
@@ -73,8 +65,6 @@ wss.on("connection", (ws: WebSocket, req) => {
         userId: userId,
         ws: ws,
     })
-
-    // need to add message receiving logic here
 
     ws.on("message", async function (incoming: string) {
         // here parsedData would give a type and shol

@@ -34,7 +34,9 @@ const hashMyPassword = async (password: string) => {
 }
 
 app.post("/signup", async (req, res) => {
+    console.log("here 1")
     const credentials = SignUpSchema.safeParse(req.body)
+    console.log("here 2")
 
     if (!credentials.success) {
         return res.status(400).json({
@@ -43,10 +45,13 @@ app.post("/signup", async (req, res) => {
         })
     }
 
+    console.log("here 24")
+    console.log("here 23")
     const userExists = await checkUserExists({
         username: credentials.data.username,
         email: credentials.data.email,
     })
+    console.log("here 3")
 
     if (userExists) {
         return res.status(409).json({
@@ -145,12 +150,13 @@ app.post("/signin", async (req, res) => {
 app.post("/createroom", roomMiddleware, async (req, res) => {
     const userId = req.userId
     const roomCredentials = roomSchema.safeParse(req.body)
-
+    console.log("reached 1")
     if (!userId) {
         return res.status(500).json({
             msg: "Something went wrong in room middleware while creating room",
         })
     }
+    console.log("reached 2")
     const userIdNumber = Number(userId)
 
     if (!roomCredentials.success) {
@@ -160,9 +166,12 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
         })
     }
 
+    console.log("reached 3")
     const sluggedRoomName = createSlug(roomCredentials.data?.roomName)
     let room
+    console.log("reached 4")
     try {
+        console.log("reached prisma create")
         room = await prisma.room.create({
             data: {
                 adminId: Number(userId),
@@ -170,11 +179,13 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
                 roomPassword: roomCredentials.data?.password,
             },
         })
+        console.log("ended prisma create")
     } catch (e) {
         return res.status(500).json({
             msg: "Error while creating room , There might exist a room with the same name ",
         })
     }
+    console.log("finally here ")
 
     const payload: cookieUser = {
         userId: userIdNumber,
@@ -183,7 +194,9 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
         passcode: roomCredentials.data.password,
         verified: true,
     }
+    console.log("coookies here")
     try {
+        console.log("coookies try")
         const token = jwt.sign(payload, JWT_SECRET)
 
         res.status(200)
@@ -196,11 +209,13 @@ app.post("/createroom", roomMiddleware, async (req, res) => {
                 roomId: room.roomId,
             })
 
+        console.log("coookies end ")
         return
     } catch {
         res.status(404).json({
             msg: "The roomToken is invalid ",
         })
+        console.log("cookies error")
         return
     }
 })
