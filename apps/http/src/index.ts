@@ -26,7 +26,7 @@ app.use(
         credentials: true,
     })
 )
-app.use(rateLimmiterMiddleware)
+// app.use(rateLimmiterMiddleware)
 
 const hashMyPassword = async (password: string) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds)
@@ -279,10 +279,13 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
     }
 })
 
-app.get("/messages", async (req, res) => {
+app.post("/messages", roomMiddleware, async (req, res) => {
     // we need to get past messages
+    console.log("here 1")
     const { roomId } = req.body
+    console.log("here 2")
     let cachedMessages = null
+    console.log("here 3")
     // try {
     //     cachedMessages = await getValues(roomId)
     // } catch (e) {}
@@ -291,12 +294,14 @@ app.get("/messages", async (req, res) => {
         //map over the array and return values
         return cachedMessages
     } else {
+        console.log("here 4")
         const dbMessages = await prisma.chat.findMany({
             where: {
                 roomId: roomId,
             },
         })
-        return dbMessages
+        console.log("here 5")
+        res.status(200).json(dbMessages)
     }
 })
 

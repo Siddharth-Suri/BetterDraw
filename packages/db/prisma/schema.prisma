@@ -32,6 +32,7 @@ model Chat {
   chatId  Int       @id @default(autoincrement())
   message String    @db.VarChar(200)
   userId  Int
+  username String
   roomId  Int
   user    User      @relation(fields: [userId], references: [id])
   room    Room      @relation(fields: [roomId],references: [roomId],onDelete: Cascade)

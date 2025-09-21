@@ -84,16 +84,20 @@ wss.on("connection", (ws: WebSocket, req) => {
                 console.log(parsedData)
                 // here ->
                 const message = JSON.stringify(parsedData.message)
+                const username = JSON.stringify(parsedData.username)
 
                 // redis here
                 // const appendValue = storeValues({ message, roomId })
 
                 // instead of awaiting be declare another function to make is " fire and forget "
-                messageCreateFunction({ message, userId, roomId }).catch(
-                    (e) => {
-                        console.log("Db call failed " + e)
-                    }
-                )
+                messageCreateFunction({
+                    message,
+                    userId,
+                    roomId,
+                    username,
+                }).catch((e) => {
+                    console.log("Db call failed " + e)
+                })
             }
         } catch {
             ws.close(500, "Server error while sending message")

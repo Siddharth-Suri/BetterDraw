@@ -10,6 +10,7 @@ export const roomMiddleware = (
     res: Response,
     next: NextFunction
 ) => {
+    console.log("middleware 1 ")
     const token = req.cookies["authToken"]
     if (!token) {
         return res.status(403).json({
@@ -26,7 +27,7 @@ export const roomMiddleware = (
         }
 
         req.userId = response.userId
-        console.log("end of middlware")
+        console.log("end of middlware 1")
         next()
     } catch (e) {
         return res.status(403).json("Invalid token , Please try relogging in ")
@@ -38,6 +39,8 @@ export const rateLimmiterMiddleware = (
     res: Response,
     next: NextFunction
 ) => {
+    console.log("middleware 2 ")
+
     const ipAddress = req.ip
 
     if (!ipAddress) {
@@ -52,7 +55,7 @@ export const rateLimmiterMiddleware = (
             count: 1,
             timeout: setTimeout(() => {
                 requests.delete(ipAddress)
-            }, 20 * 1000),
+            }, 100 * 1000),
         })
         next()
     } else {

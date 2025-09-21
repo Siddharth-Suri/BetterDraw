@@ -39,7 +39,9 @@ export const messageCreateFunction = async ({
     message,
     userId,
     roomId,
+    username,
 }: {
+    username: string
     message: string
     userId: number
     roomId: number
@@ -54,6 +56,7 @@ export const messageCreateFunction = async ({
     )
     const messageCreate = await prisma.chat.create({
         data: {
+            username:username,
             message: message,
             userId: userId,
             roomId: roomId,
