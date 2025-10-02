@@ -1,32 +1,11 @@
-import { Redis } from "ioredis"
+import { createClient, RedisClientType } from "redis"
 
-const redis = new Redis()
-
-redis.on("connect", () => {
-    console.log("redis was connected on port 6379")
+const client: RedisClientType = createClient({
+    url: "redis://localhost:6379",
 })
 
-export async function storeValues({
-    message,
-    roomId,
-}: {
-    message: object
-    roomId: number
-}) {
-    let messageStr = JSON.stringify(message)
-    console.log(messageStr)
-    await redis.publish(`roomId:${roomId}:message:`, messageStr)
-    console.log("Message uploaded to redis")
-}
+client.on("error", (err) => console.error("Redis Client Error", err))
 
-export async function getValues({ roomId }: { roomId: number }) {
-    const sub = new Redis()
+await client.connect()
 
-    await sub.subscribe(`roomId:${roomId}:`)
-    // whenever new message comes make sure to push it to connected users
-    sub.on("message", (channel, message) => {
-        const parsedMessage = JSON.parse(message)
-        return parsedMessage
-        // send all active users the message
-    })
-}
+export default client

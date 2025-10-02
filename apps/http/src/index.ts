@@ -7,7 +7,7 @@ import { SignUpSchema, SignInSchema, roomSchema } from "@repo/common/types"
 import bcrypt from "bcrypt"
 import { createSlug } from "@repo/common/slug"
 import type { Room, User, Chat } from "@prisma/client"
-import { z } from "zod"
+import { number, z } from "zod"
 import { checkUserExists } from "./lib.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
@@ -26,7 +26,7 @@ app.use(
         credentials: true,
     })
 )
-// app.use(rateLimmiterMiddleware)
+app.use(rateLimmiterMiddleware)
 
 const hashMyPassword = async (password: string) => {
     const hashedPassword = await bcrypt.hash(password, saltRounds)
@@ -281,27 +281,29 @@ app.post("/verifyroom", roomMiddleware, async (req, res) => {
 
 app.post("/messages", roomMiddleware, async (req, res) => {
     // we need to get past messages
-    console.log("here 1")
-    const { roomId } = req.body
-    console.log("here 2")
-    let cachedMessages = null
-    console.log("here 3")
+    console.log("reached message endpoint")
+    const body = req.body.current
+    console.log(body)
+
+    // let cachedMessages = null
     // try {
     //     cachedMessages = await getValues(roomId)
     // } catch (e) {}
+    // if (cachedMessages) {
+    //     return cachedMessages
+    // }
 
-    if (cachedMessages) {
-        //map over the array and return values
-        return cachedMessages
-    } else {
+    if (body && typeof body == "number") {
         console.log("here 4")
         const dbMessages = await prisma.chat.findMany({
             where: {
-                roomId: roomId,
+                roomId: body,
             },
         })
+        console.log(dbMessages)
         console.log("here 5")
         res.status(200).json(dbMessages)
+    } else {
     }
 })
 

@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+
+	postgres-db:
+		container-name:	
+
+	hermit-app:
+		container_name: priceless_murdock
+		ports:
+			- "3000:3000"
+			- "3002:3002"
+			- "8080:8080"

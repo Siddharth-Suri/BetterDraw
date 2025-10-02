@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express"
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { JWT_SECRET } from "./config.js"
+import client from "./redis.js"
 
 const requests: Map<string, { count: number; timeout: NodeJS.Timeout }> =
     new Map()
@@ -10,7 +11,6 @@ export const roomMiddleware = (
     res: Response,
     next: NextFunction
 ) => {
-    console.log("middleware 1 ")
     const token = req.cookies["authToken"]
     if (!token) {
         return res.status(403).json({
@@ -34,39 +34,26 @@ export const roomMiddleware = (
     }
 }
 
-export const rateLimmiterMiddleware = (
+export const rateLimmiterMiddleware = async (
     req: Request,
     res: Response,
     next: NextFunction
 ) => {
-    console.log("middleware 2 ")
-
-    const ipAddress = req.ip
-
-    if (!ipAddress) {
-        return res.status(403).json({
-            msg: "Ip not found",
-        })
-    }
-
-    const entry = requests.get(ipAddress)
-    if (!entry) {
-        requests.set(ipAddress, {
-            count: 1,
-            timeout: setTimeout(() => {
-                requests.delete(ipAddress)
-            }, 100 * 1000),
-        })
-        next()
-    } else {
-        const updatedCount = (entry.count ?? 0) + 1
-        requests.set(ipAddress, { ...entry, count: updatedCount })
-
-        if (entry.count > 20) {
-            console.log("Rate limitter activated")
-            return res
-                .status(429)
-                .json({ msg: "Calm down , Too many requests buddy" })
+    try {
+        const ipAddress = req.ip
+        const key = `ratelimit:${ipAddress}`
+        const requests = await client.incr(key)
+        if (requests === 1) {
+            await client.expire(key, 80)
         }
+        if (requests > 80) {
+            console.log("Too many requests")
+            res.status(429).json({ msg: "Too many requests" })
+        }
+        console.log("Passed")
+        next()
+    } catch (e) {
+        console.log("Rate limiter error" + e)
+        next()
     }
 }

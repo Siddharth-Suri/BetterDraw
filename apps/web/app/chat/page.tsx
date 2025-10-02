@@ -30,6 +30,7 @@ export default function Chat() {
     const roomToken = Cookies.get("roomToken") ?? ""
 
     useEffect(() => {
+        console.log("here")
         if (!token || !roomToken) {
             setError(" Unauthorized access : Please try logging in ")
             return
@@ -48,6 +49,8 @@ export default function Chat() {
         setRoomName(roomTokenDecoded.roomNameSlug)
         usernameRef.current = decoded.username
         roomIdRef.current = roomTokenDecoded.roomId
+        console.log("here")
+        console.log(roomIdRef)
     }, [])
 
     useEffect(() => {
@@ -57,23 +60,22 @@ export default function Chat() {
             ws.onopen = async () => {
                 console.log("Connected to server")
                 setSocket(ws)
+                console.log("2nd effect")
+                console.log(roomIdRef)
                 const res = await fetch("http://localhost:3002/messages", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(roomIdRef),
                     credentials: "include",
                 })
+                console.log("Fetch ran ")
                 if (!res.ok) return
-
+                // need to be state instead of server memory
                 const pastMessages = await res.json()
-                console.log("here")
-                console.log(pastMessages)
                 pastMessages.map(async (message: any) => {
-                    console.log(message)
-                    console.log(message.message)
                     const res = message.message
                     const parsed = JSON.parse(res)
-                    console.log(parsed)
+
                     setMessages((prev) => [
                         ...prev,
                         {

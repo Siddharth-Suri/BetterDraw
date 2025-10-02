@@ -34,7 +34,6 @@ export default function Room() {
                 route.push("/chat")
             } else {
                 const body = await res.json()
-                console.log(body?.msg)
                 setError(body?.msg)
             }
         } catch (e) {
