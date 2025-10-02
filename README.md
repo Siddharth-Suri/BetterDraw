@@ -2,7 +2,9 @@
 
 Hermit is a **blazingly fast WebSocket-based chat application** designed to support multiple concurrent users. It utilizes modern web technologies to deliver a scalable, type safe and responsive architecture.
 
----
+
+https://github.com/user-attachments/assets/1c2ffa52-cf85-4cbf-822d-348ba20f32d2
+
 
 ## Table of Contents
 
