@@ -16,6 +16,7 @@ Hermit is a **blazingly fast WebSocket-based chat application** designed to supp
 ## Features
 
 - Real time messaging via **WebSockets**
+- Quick rate limiting middlware with **Redis**
 - Inactive room deletion using **Cron**
 - **Prisma ORM** for handling migrations & type safety
 - Supports multiple concurrent users in different chat rooms
@@ -29,8 +30,8 @@ Hermit is a **blazingly fast WebSocket-based chat application** designed to supp
 
 ## Upcoming
 
-- Quick caching support with **Redis**
-- Rate limiting for security and scalibility
+- Quick caching support with **Redis**  ✅
+- Rate limiting for security and scalibility ✅
 - Avatars and Account section
 
 ## Tech Stack
@@ -45,6 +46,7 @@ Hermit is a **blazingly fast WebSocket-based chat application** designed to supp
 - **[Express](https://expressjs.com/)** - Web framework for building APIs
 - **[Tailwind CSS](https://tailwindcss.com/)** - Used CSS framework
 - **[Next.js](https://nextjs.org/)** - React framework for SSR/SSG and API routes
+- **[Redis](https://redis.io/docs/latest/)** - Redis is used for very quick in memory tasks
 
 ---
 
@@ -59,4 +61,8 @@ cd hermit
 pnpm install
 # or
 npm install
+
+# Generate prisma file 
+npx prisma generate
+# Add your own .env file for database URL
 ```
